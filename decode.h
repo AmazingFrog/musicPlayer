@@ -1,4 +1,4 @@
-#ifndef __DECODE_H__
+﻿#ifndef __DECODE_H__
 #define __DECODE_H__
 
 #include <mutex>

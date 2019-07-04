@@ -1,15 +1,18 @@
-#ifndef CROSSPLATFORM_H
+﻿#ifndef CROSSPLATFORM_H
 #define CROSSPLATFORM_H
-
-
-#ifdef __linux__
-#define corss_stat(path,sb) stat(path,sb)
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#ifdef OS_LINUX
+#define readFileNameFromDir readFileNameFromDir_Linux
+#define removeDir removeDir_Linux
+extern std::vector<std::string> readFileNameFromDir_Linux(const std::string&);
+extern void removeDir_Linux(const std::string& dir);
 #else
-#define cross_stat _stat
-#endif //__linux__
-
-
+#define readFileNameFromDir readFileNameFromDir_Win
+#define removeDir removeDir_Win
+extern std::vector<std::string> readFileNameFromDir_Win(const std::string&);
+extern void removeDir_Win(const std::string& dir);
+#endif // OS_LINUX
 #endif // CROSSPLATFORM_H

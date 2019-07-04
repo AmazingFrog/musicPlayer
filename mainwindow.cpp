@@ -1,7 +1,13 @@
+﻿#ifndef OS_LINUX
+#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif //_MSC_VER
+#endif //OS_LINUX
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "util.h"
 #include <iostream>
+#include <QTextCodec>
 
 MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindow){
     ui->setupUi(this);
@@ -17,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     this->listLayout = ui->list;
     this->playing = ui->playing;
     this->playModeBtn = ui->playMode;
-    this->playModeBtn->setText(PLAY_MODE_NAME[this->playMode]);
+    this->playModeBtn->setText(tr(PLAY_MODE_NAME[this->playMode]));
     //播放图标控件
     this->playIcon = QIcon(":/res/playerIcon/res/play.png");
     this->pauseIcon = QIcon(":/res/playerIcon/res/pause.png");
@@ -33,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //读取歌曲信息
     this->initMusicDirInfo();
     connect(this->play,SIGNAL(songFinish()),this,SLOT(nextSong()));
-    this->musicLength = this->musicName.size();
+    this->musicLength = static_cast<unsigned int>(this->musicName.size());
 }
 
 MainWindow::~MainWindow(){
@@ -44,29 +50,24 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::initMusicDirInfo(){
-    struct stat sb;
+#ifndef OS_LINUX
+    QTextCodec* codec = QTextCodec::codecForName("GBK");
+#endif
     std::ifstream fin("dirConfig");
     std::string dir;
-    DIR* dirPoint;
-    struct dirent* file;
     QStringList stringList;
     unsigned int dirSubscript = 0;
     while(fin.good()){
-        fin >> dir;
-        corss_stat(dir.c_str(),&sb);
-        if((sb.st_mode&S_IFMT) != S_IFDIR){
-            std::cout << dir << "is not dir" << std::endl;
-            continue;
-        }
+        fin >> dir;    
+        std::vector<std::string> musicName = readFileNameFromDir(dir);
         this->musicDir.push_back(dir);
-        dirPoint = opendir(dir.c_str());
-        while((file=readdir(dirPoint)) != 0){
-            if(file->d_name[0] == '.' || file->d_type == DT_DIR){
-                continue;
-            }
-            this->musicName.push_back(file->d_name);
+        for(auto i=musicName.begin();i!=musicName.end();++i){
             this->nameMapDir.push_back(dirSubscript);
-            stringList << file->d_name;
+#ifndef OS_LINUX
+            stringList << codec->toUnicode(i->c_str());
+#else
+            stringList << QString::fromStdString(*i);
+#endif    
         }
         this->listModel = new QStringListModel(stringList);
         this->listLayout->setModel(this->listModel);
@@ -128,7 +129,7 @@ void MainWindow::on_list_doubleClicked(const QModelIndex &index){
 }
 void MainWindow::on_playMode_clicked(){
     this->playMode = nextPlayMode(this->playMode);
-    this->playModeBtn->setText(PLAY_MODE_NAME[this->playMode]);
+    this->playModeBtn->setText(tr(PLAY_MODE_NAME[this->playMode]));
 }
 void MainWindow::nextSong(){
     int now = this->getNextSongSubscript();

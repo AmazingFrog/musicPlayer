@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QListView>
 #include <vector>
+#include <string>
 #include <fstream>
 #include <QStringList>
 #include <QStringListModel>
