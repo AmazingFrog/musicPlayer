@@ -17,7 +17,7 @@
 
 #include "play.h"
 #include "decode.h"
-#include "crossplatform.h"
+//#include "crossplatform.h"
 
 
 #define PLAY_MODE_MUNBER        3
@@ -76,13 +76,17 @@ private:
     char* musicData;
     //歌曲
     unsigned int musicLength;
-    std::vector<std::string> musicName;
-    std::vector<std::string> musicDir;
+//    std::vector<std::string> musicName;
+//    std::vector<std::string> musicDir;
+    QStringList musicName;
+    QStringList musicDir;
     std::vector<unsigned int> nameMapDir;
     std::vector<int> musicPlayList;
     QStringListModel* listModel;
     void initMusicDirInfo();
     int getNextSongSubscript();
+    
+    QStringList readFileNameFromDir(const QString& dir);
 };
 
 #endif // MAINWINDOW_H

@@ -8,6 +8,9 @@
 #include "util.h"
 #include <iostream>
 #include <QTextCodec>
+#include <QFileInfo>
+#include <QTextStream>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindow){
     ui->setupUi(this);
@@ -50,24 +53,41 @@ MainWindow::~MainWindow(){
 }
 
 void MainWindow::initMusicDirInfo(){
-#ifndef OS_LINUX
-    QTextCodec* codec = QTextCodec::codecForName("GBK");
-#endif
-    std::ifstream fin("dirConfig");
-    std::string dir;
+//    std::ifstream fin("dirConfig");
+//    std::string dir;
+//    while(fin.good()){
+//        fin >> dir;    
+//        std::vector<std::string> musicName = readFileNameFromDir(dir);
+//        this->musicDir.push_back(dir);
+//        for(auto i=musicName.begin();i!=musicName.end();++i){
+//            this->nameMapDir.push_back(dirSubscript);
+//#ifndef OS_LINUX
+//            stringList << codec->toUnicode(i->c_str());
+//#else
+//            stringList << QString::fromStdString(*i);
+//#endif    
+//        }
+//        this->listModel = new QStringListModel(stringList);
+//        this->listLayout->setModel(this->listModel);
+//        ++dirSubscript;
+//    }
     QStringList stringList;
     unsigned int dirSubscript = 0;
-    while(fin.good()){
-        fin >> dir;    
-        std::vector<std::string> musicName = readFileNameFromDir(dir);
-        this->musicDir.push_back(dir);
-        for(auto i=musicName.begin();i!=musicName.end();++i){
-            this->nameMapDir.push_back(dirSubscript);
-#ifndef OS_LINUX
-            stringList << codec->toUnicode(i->c_str());
-#else
-            stringList << QString::fromStdString(*i);
-#endif    
+    QFile configFile("dirConfig");
+    QString dir;
+    if(configFile.open(QFile::ReadOnly)){
+        QTextStream dirInputStream(&configFile);
+        while(!dirInputStream.atEnd()){
+            dirInputStream >> dir;
+            QStringList musicNameInDir = readFileNameFromDir(dir);
+            for(auto i=musicNameInDir.begin();i!=musicNameInDir.end();++i){
+                this->nameMapDir.push_back(dirSubscript);
+                stringList << *i;
+            }
+            if(!dir.endsWith("\\")){
+                dir.push_back('\\');
+            }
+            this->musicDir << dir;
         }
         this->listModel = new QStringListModel(stringList);
         this->listLayout->setModel(this->listModel);
@@ -88,13 +108,13 @@ void MainWindow::on_playSong_clicked(){
         this->playBtn->setIcon(this->playIcon);
         break;
     case PLAY_STATE_STOP:
-        this->musicData = (char*)this->decode.readMusic((this->musicDir[this->nameMapDir[0]]+this->musicName[0]).c_str(),&mInfo);
+        this->musicData = (char*)this->decode.readMusic((this->musicDir[this->nameMapDir[0]]+this->musicName[0]).toLocal8Bit(),&mInfo);
         pInfo = MusicInfoCoverToPlayInfo(mInfo);
         this->play->setBuffer(this->musicData,pInfo);
         this->progressBar->setMaximum(this->play->getMusicTime_S());
         this->totalTime->setText(QString::fromStdString(timeToString(this->play->getMusicTime_S())));
         this->play->play();
-        this->playing->setText(QString::fromStdString(this->musicName[0]));
+        this->playing->setText(this->musicName[0]);
         this->playBtn->setIcon(this->pauseIcon);
     default:
         break;
@@ -115,9 +135,9 @@ void MainWindow::on_list_doubleClicked(const QModelIndex &index){
     int r = index.row();
     MusicInfo mInfo;
     PlayInfo pInfo;
-    std::string name(this->musicDir[this->nameMapDir[r]]+index.data().toString().toStdString());
+    QString name(this->musicDir[this->nameMapDir[r]]+index.data().toString());
     this->play->stop();
-    this->musicData = (char*)this->decode.readMusic(name.c_str(),&mInfo);
+    this->musicData = (char*)this->decode.readMusic(name.toLocal8Bit(),&mInfo);
     pInfo = MusicInfoCoverToPlayInfo(mInfo);
     this->play->setBuffer(this->musicData,pInfo);
     this->progressBar->setMaximum(this->play->getMusicTime_S());
@@ -135,16 +155,16 @@ void MainWindow::nextSong(){
     int now = this->getNextSongSubscript();
     MusicInfo mInfo;
     PlayInfo pInfo;
-    std::string name(this->musicDir[this->nameMapDir[now]]+this->musicName[now]);
+    QString name(this->musicDir[this->nameMapDir[now]]+this->musicName[now]);
     this->play->stop();
-    this->musicData = (char*)this->decode.readMusic(name.c_str(),&mInfo);
+    this->musicData = (char*)this->decode.readMusic(name.toLocal8Bit(),&mInfo);
     pInfo = MusicInfoCoverToPlayInfo(mInfo);
     this->play->setBuffer(this->musicData,pInfo);
     this->progressBar->setMaximum(this->play->getMusicTime_S());
     this->totalTime->setText(QString::fromStdString(timeToString(this->play->getMusicTime_S())));
     this->play->play();
     this->musicPlayList.push_back(now);
-    this->playing->setText(QString::fromStdString(this->musicName[now]));
+    this->playing->setText(this->musicName[now]);
 }
 int MainWindow::getNextSongSubscript(){
     int next = 0;
@@ -165,4 +185,16 @@ int MainWindow::getNextSongSubscript(){
         break;
     }
     return next;
+}
+QStringList MainWindow::readFileNameFromDir(const QString &dirName){
+    QStringList ret;
+    QFileInfo dirInfo(dirName);
+    if(dirInfo.isDir()){
+        QDir dir(dirName);
+        QFileInfoList allMusicFileInfo = dir.entryInfoList(QDir::Files|QDir::Readable);
+        for(auto i=allMusicFileInfo.begin();i!=allMusicFileInfo.end();++i){
+            ret << i->fileName();
+        }
+    }
+    return ret;
 }
