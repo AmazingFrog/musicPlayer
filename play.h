@@ -1,4 +1,4 @@
-#ifndef __PLAY_H__
+﻿#ifndef __PLAY_H__
 #define __PLAY_H__
 
 #include <mutex>
@@ -8,7 +8,6 @@
 #include <cstring>
 #include <QObject>
 #include <iostream>
-#include <unistd.h>
 #include <exception>
 #include "AL/al.h"
 #include "AL/alc.h"

@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <ctime>
@@ -18,7 +18,6 @@
 #include "play.h"
 #include "decode.h"
 #include "updateUIThread.h"
-#include "crossplatform.h"
 
 
 #define PLAY_MODE_MUNBER        3
@@ -78,13 +77,15 @@ private:
     char* musicData;
     //歌曲
     unsigned int musicLength;
-    std::vector<std::string> musicName;
-    std::vector<std::string> musicDir;
+    QStringList musicName;
+    QStringList musicDir;
     std::vector<unsigned int> nameMapDir;
     std::vector<int> musicPlayList;
     QStringListModel* listModel;
     void initMusicDirInfo();
     int getNextSongSubscript();
+    
+    QStringList readFileNameFromDir(const QString& dir);
     void playMusicName(int subscript);
 };
 
