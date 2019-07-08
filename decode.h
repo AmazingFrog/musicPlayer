@@ -4,11 +4,12 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include <memory>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
-#include <memory>
+
 #include "linearBuffer.h"
 
 #ifdef __cplusplus

@@ -2,9 +2,8 @@
 #define __UTIL_H__
 #include <string>
 #include <cstdio>
-#include "decode.h"
 #include "play.h"
-
+#include "decode.h"
 PlayInfo MusicInfoCoverToPlayInfo(const MusicInfo& info){
     ALenum format;
     switch (info.format)
@@ -47,9 +46,12 @@ PlayInfo MusicInfoCoverToPlayInfo(const MusicInfo& info){
     }
     return PlayInfo(info.musicByteLength,info.musicTime_S,info.freq,format);
 }
-std::string timeToString(unsigned long time){
-    char t[10] = {0};
-    sprintf(t,"%lu:%lu",time/60,time%60);
+std::string timeToString(int time){
+    if(time < 0){
+        return std::string();
+    }
+    char t[16] = {0};
+    sprintf(t,"%2d:%02d",time/60,time%60);
     return std::string(t);
 }
 #endif //__UTIL_H__

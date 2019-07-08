@@ -28,7 +28,9 @@ SOURCES += \
         mainwindow.cpp \
         decode.cpp \
         linearBuffer.cpp \
-        play.cpp
+        play.cpp \
+    updateUIThread.cpp \
+    crossplatform.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -149,7 +151,8 @@ HEADERS += \
     include/libavutil/tree.h \
     include/libavutil/twofish.h \
     include/libavutil/version.h \
-    include/libavutil/xtea.h
+    include/libavutil/xtea.h \
+    updateUIThread.h
 
 FORMS += \
         mainwindow.ui

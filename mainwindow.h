@@ -1,21 +1,23 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QPushButton>
-#include <QSlider>
+#include <ctime>
 #include <QIcon>
 #include <QLabel>
-#include <QListView>
 #include <vector>
-#include <fstream>
-#include <QStringList>
-#include <QStringListModel>
 #include <cstdlib>
-#include <ctime>
+#include <QSlider>
+#include <fstream>
+#include <QListView>
+#include <QStringList>
+#include <QMainWindow>
+#include <QPushButton>
+#include <QStringListModel>
+
 
 #include "play.h"
 #include "decode.h"
+#include "updateUIThread.h"
 #include "crossplatform.h"
 
 
@@ -43,11 +45,11 @@ private slots:
     void on_progressBar_sliderReleased();
     void on_progressBar_valueChanged(int value);
     void on_list_doubleClicked(const QModelIndex &index);
-
     void on_playMode_clicked();
-
+    void on_nextSong_clicked();
+    void on_lastSong_clicked();
 public slots:
-    void getAlreadyPlay_S(unsigned long s);
+    void getAlreadyPlay_S(int s);
     void nextSong();
 
 private:
@@ -69,9 +71,10 @@ private:
     QLabel* alreadyPlay;
     QLabel* totalTime;
     QLabel* show_d;
-    //解码器,播放器
+    //解码器,播放器,ui更新线程
     Decode decode;
     Play *play;
+    UpdateUIThread* updateUI;
     char* musicData;
     //歌曲
     unsigned int musicLength;
@@ -82,6 +85,7 @@ private:
     QStringListModel* listModel;
     void initMusicDirInfo();
     int getNextSongSubscript();
+    void playMusicName(int subscript);
 };
 
 #endif // MAINWINDOW_H

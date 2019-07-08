@@ -4,7 +4,6 @@ void LinearBuffer::push(void* data,unsigned long len){
         if(!(this->useBufferNumber < this->bufferNumber)){
             this->buffer.push_back(new char[this->perBufferByteSize]);
             ++this->useBufferNumber;
-            // std::cout << "add new buffer" << std::endl;
         }
     }
     unsigned int subscript = this->length / this->perBufferByteSize;
@@ -12,12 +11,10 @@ void LinearBuffer::push(void* data,unsigned long len){
     char* pdata = (char*)data;
     if(end + len <= this->perBufferByteSize){
         memcpy(this->buffer[subscript]+end,pdata,len);
-        // std::cout << "end+len <= per - " << len/1024/1024 << "M" <<std::endl;
         this->length += len;
     }
     else{
         memcpy(this->buffer[subscript]+end,pdata,this->perBufferByteSize-end);
-        // std::cout << "copy remain - " << (this->perBufferByteSize-end)/1024/1024 << "M" << std::endl;
         pdata += (this->perBufferByteSize - end);
         len -= (this->perBufferByteSize - end);
         this->length += (this->perBufferByteSize - end);
@@ -25,7 +22,6 @@ void LinearBuffer::push(void* data,unsigned long len){
             char* t = new char[this->perBufferByteSize];
             unsigned int copyLen = (len<=this->perBufferByteSize)?(len):(this->perBufferByteSize);
             memcpy(t,pdata,copyLen);
-            std::cout << "copy - " << copyLen/1024/1024 << "M" << std::endl;
             pdata += copyLen;
             this->buffer.push_back(t);
             len -= copyLen;
@@ -49,7 +45,7 @@ void* LinearBuffer::getData(){
         memcpy(this->ret,*j,this->length);
         return (void*)this->ret;
     }
-    for(int k=0;k<this->useBufferNumber-1;++k,++j,i+=this->perBufferByteSize){
+    for(unsigned int k=0;k<this->useBufferNumber-1;++k,++j,i+=this->perBufferByteSize){
         memcpy(this->ret+i,*j,this->perBufferByteSize);
     }
     memcpy(this->ret+i,*j,this->length-i);

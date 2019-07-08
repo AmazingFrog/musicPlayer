@@ -80,7 +80,7 @@ void Decode::f(Decode *const _this){
     _this->avPacket->data = 0;
     _this->avPacket->size = 0;
     avcodec_send_packet(_this->avCodecContext,_this->avPacket);
-    printf("alread decode %luB\n",_this->b.getLength());
+//    printf("alread decode %luB\n",_this->b.getLength());
     //设置返回值
     MusicInfo *p = (MusicInfo *)_this->passValue;
     p->format = _this->avCodecContext->sample_fmt;

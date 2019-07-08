@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     ui->setupUi(this);
 
     this->play = new Play();
+    this->updateUI = new UpdateUIThread(this->play);
     this->playMode = PLAY_MODE_RANDOM;
     this->musicLength = 0;
     //初始化控件
@@ -29,54 +30,33 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //进度条控件
     this->progressBar->setMaximum(0);
     this->progressBar->setSingleStep(1);
-    connect(this->play,SIGNAL(sendAlreadyPlay_S(unsigned long)),this,SLOT(getAlreadyPlay_S(unsigned long)));
     //读取歌曲信息
     this->initMusicDirInfo();
-    connect(this->play,SIGNAL(songFinish()),this,SLOT(nextSong()));
     this->musicLength = this->musicName.size();
+    //连接更新ui的信号
+    connect(this->updateUI,SIGNAL(sendAlreadPlay_S(int)),this,SLOT(getAlreadyPlay_S(int)));
+    connect(this->updateUI,SIGNAL(songFinish()),this,SLOT(nextSong()));
 }
-
 MainWindow::~MainWindow(){
     delete ui;
     this->play->quit();
+    this->updateUI->quit();
+    this->updateUI->wait();
+    delete this->updateUI;
     delete this->play;
     delete this->listModel;
 }
-
 void MainWindow::initMusicDirInfo(){
-    struct stat sb;
-    std::ifstream fin("dirConfig");
-    std::string dir;
-    DIR* dirPoint;
-    struct dirent* file;
     QStringList stringList;
-    unsigned int dirSubscript = 0;
-    while(fin.good()){
-        fin >> dir;
-        corss_stat(dir.c_str(),&sb);
-        if((sb.st_mode&S_IFMT) != S_IFDIR){
-            std::cout << dir << "is not dir" << std::endl;
-            continue;
-        }
-        this->musicDir.push_back(dir);
-        dirPoint = opendir(dir.c_str());
-        while((file=readdir(dirPoint)) != 0){
-            if(file->d_name[0] == '.' || file->d_type == DT_DIR){
-                continue;
-            }
-            this->musicName.push_back(file->d_name);
-            this->nameMapDir.push_back(dirSubscript);
-            stringList << file->d_name;
-        }
-        this->listModel = new QStringListModel(stringList);
-        this->listLayout->setModel(this->listModel);
-        ++dirSubscript;
+    this->musicName = readFileNameFromDir(this->nameMapDir,this->musicDir);
+    for(auto i=this->musicName.begin();i!=this->musicName.end();++i){
+        stringList << i->c_str();
     }
-}
+    this->listModel = new QStringListModel(stringList);
+    this->listLayout->setModel(this->listModel);
 
+}
 void MainWindow::on_playSong_clicked(){
-    MusicInfo mInfo;
-    PlayInfo pInfo;
     switch(this->play->getState()){
     case PLAY_STATE_PAUSE:
         this->play->resume();
@@ -87,14 +67,8 @@ void MainWindow::on_playSong_clicked(){
         this->playBtn->setIcon(this->playIcon);
         break;
     case PLAY_STATE_STOP:
-        this->musicData = (char*)this->decode.readMusic((this->musicDir[this->nameMapDir[0]]+this->musicName[0]).c_str(),&mInfo);
-        pInfo = MusicInfoCoverToPlayInfo(mInfo);
-        this->play->setBuffer(this->musicData,pInfo);
-        this->progressBar->setMaximum(this->play->getMusicTime_S());
-        this->totalTime->setText(QString::fromStdString(timeToString(this->play->getMusicTime_S())));
-        this->play->play();
-        this->playing->setText(QString::fromStdString(this->musicName[0]));
-        this->playBtn->setIcon(this->pauseIcon);
+        this->playMusicName(0);
+        break;
     default:
         break;
     }
@@ -106,44 +80,21 @@ void MainWindow::on_progressBar_sliderReleased(){
 void MainWindow::on_progressBar_valueChanged(int value){
     this->alreadyPlay->setText(QString("%1").arg(value));
 }
-void MainWindow::getAlreadyPlay_S(unsigned long s){
-    this->progressBar->setValue(s);
-    this->alreadyPlay->setText(QString::fromStdString(timeToString(s)));
-}
 void MainWindow::on_list_doubleClicked(const QModelIndex &index){
     int r = index.row();
-    MusicInfo mInfo;
-    PlayInfo pInfo;
-    std::string name(this->musicDir[this->nameMapDir[r]]+index.data().toString().toStdString());
-    this->play->stop();
-    this->musicData = (char*)this->decode.readMusic(name.c_str(),&mInfo);
-    pInfo = MusicInfoCoverToPlayInfo(mInfo);
-    this->play->setBuffer(this->musicData,pInfo);
-    this->progressBar->setMaximum(this->play->getMusicTime_S());
-    this->totalTime->setText(QString::fromStdString(timeToString(this->play->getMusicTime_S())));
-    this->play->play();
-    this->musicPlayList.push_back(r);
-    this->playing->setText(index.data().toString());
-    this->playBtn->setIcon(this->pauseIcon);
+    this->playMusicName(r);
 }
 void MainWindow::on_playMode_clicked(){
     this->playMode = nextPlayMode(this->playMode);
     this->playModeBtn->setText(PLAY_MODE_NAME[this->playMode]);
 }
+void MainWindow::getAlreadyPlay_S(int s){
+    this->progressBar->setValue(s);
+    this->alreadyPlay->setText(QString::fromStdString(timeToString(s)));
+}
 void MainWindow::nextSong(){
     int now = this->getNextSongSubscript();
-    MusicInfo mInfo;
-    PlayInfo pInfo;
-    std::string name(this->musicDir[this->nameMapDir[now]]+this->musicName[now]);
-    this->play->stop();
-    this->musicData = (char*)this->decode.readMusic(name.c_str(),&mInfo);
-    pInfo = MusicInfoCoverToPlayInfo(mInfo);
-    this->play->setBuffer(this->musicData,pInfo);
-    this->progressBar->setMaximum(this->play->getMusicTime_S());
-    this->totalTime->setText(QString::fromStdString(timeToString(this->play->getMusicTime_S())));
-    this->play->play();
-    this->musicPlayList.push_back(now);
-    this->playing->setText(QString::fromStdString(this->musicName[now]));
+    this->playMusicName(now);
 }
 int MainWindow::getNextSongSubscript(){
     int next = 0;
@@ -164,4 +115,34 @@ int MainWindow::getNextSongSubscript(){
         break;
     }
     return next;
+}
+void MainWindow::playMusicName(int subscript){
+    MusicInfo mInfo;
+    PlayInfo pInfo;
+    if(this->updateUI->isRunning()){
+        this->updateUI->quit();
+        this->updateUI->wait();
+    }
+    std::string name(this->musicDir[this->nameMapDir[subscript]]+this->musicName[subscript]);
+    this->play->stop();
+    this->musicData = (char*)this->decode.readMusic(name.c_str(),&mInfo);
+    pInfo = MusicInfoCoverToPlayInfo(mInfo);
+    this->play->setBuffer(this->musicData,pInfo);
+    this->progressBar->setMaximum(this->play->getMusicTime_S());
+    this->totalTime->setText(QString::fromStdString(timeToString(this->play->getMusicTime_S())));
+    this->musicPlayList.push_back(subscript);
+    this->playing->setText(QString::fromStdString(this->musicName[subscript]));
+    this->playBtn->setIcon(this->pauseIcon);
+    this->play->play();
+    this->updateUI->start();
+}
+void MainWindow::on_nextSong_clicked(){
+    int next = this->getNextSongSubscript();
+    this->playMusicName(next);
+}
+void MainWindow::on_lastSong_clicked(){
+    auto i = this->musicPlayList.rbegin();
+    if(i+1 != this->musicPlayList.rend()){
+        this->playMusicName(*(i+1));
+    }
 }

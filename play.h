@@ -14,19 +14,10 @@
 #include "AL/alc.h"
 #include "AL/alext.h"
 
-#define BUFFER_MAX 32
-
 #define PLAY_STATE_PLAYING        0x0101
 #define PLAY_STATE_PAUSE          0x0102
 #define PLAY_STATE_STOP           0x0103
-
-#define PLAYER_COMMAND_NO_COMMAND        0x0200
-#define PLAYER_COMMAND_JUMP              0x0201
-#define PLAYER_COMMAND_PAUSE             0x0202
-#define PLAYER_COMMAND_RESUME            0x0203
-#define PLAYER_COMMAND_STOP              0x0204
-#define PLAYER_COMMAND_PLAY              0x0205
-#define PLAYER_COMMAND_QUIT              0x0206
+#define PLAY_STATE_FINISH         0x0104
 
 extern int getSampleByteLength(ALenum format);
 
@@ -59,33 +50,21 @@ private:
     char* soundData = 0;
     unsigned long musicTime_S = 0;
 
-    //多线程相关参数
-    std::thread* playMusicThread;
-    std::mutex notifyCommandCome;
-    std::mutex bufferMutex;
-    int command;
-    void* commandValuePtr = 0;
-    std::atomic<bool> commandCome;
-
     //openal相关参数
     ALCdevice* dev;
     ALCcontext* context;
     ALuint source;
-    ALuint buffer[BUFFER_MAX];
+    ALuint buffer;
     ALenum format;
     ALsizei freq;
 
     void Init();
-    void f();
-    void jump();
 public:
     Play();
-    Play(const unsigned int bufferNumber);
     ~Play();
     int getState();
 
-    //仅发送命令给f解析
-    void play();//第一次播放调用
+    void play();
     void pause();
     void resume();
     void jumpTo(const unsigned long jumpTo_S);
@@ -96,9 +75,9 @@ public:
     void setBuffer(void* data,const PlayInfo& playInfo);
 
     unsigned long getMusicTime_S();
+    int getAlreadyPlay_S();
     //发送信号
 signals:
-    void sendAlreadyPlay_S(unsigned long alreadyPlayS);
     void songFinish();
 };
 #endif //__PLAY_H__
