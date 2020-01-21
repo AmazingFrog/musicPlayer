@@ -28,8 +28,8 @@ SOURCES += \
         mainwindow.cpp \
         decode.cpp \
         play.cpp \
-    updateUIThread.cpp \
-    linearBuffer.cpp
+    linearBuffer.cpp \
+    util.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -256,7 +256,6 @@ HEADERS += \
     include/windows/libavutil/twofish.h \
     include/windows/libavutil/version.h \
     include/windows/libavutil/xtea.h \
-    updateUIThread.h \
     linearBuffer.h
 
 FORMS += \

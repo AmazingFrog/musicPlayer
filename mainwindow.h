@@ -2,23 +2,28 @@
 #define MAINWINDOW_H
 
 #include <ctime>
-#include <QIcon>
-#include <QLabel>
 #include <vector>
 #include <cstdlib>
-#include <QSlider>
 #include <fstream>
+#include <iostream>
+
+#include <QDir>
+#include <QIcon>
+#include <QLabel>
+#include <QTimer>
+#include <QSlider>
 #include <QListView>
+#include <QFileInfo>
+#include <QTextCodec>
+#include <QTextStream>
 #include <QStringList>
 #include <QMainWindow>
 #include <QPushButton>
 #include <QStringListModel>
 
-
+#include "util.h"
 #include "play.h"
 #include "decode.h"
-#include "updateUIThread.h"
-
 
 #define PLAY_MODE_MUNBER        3
 #define PLAY_MODE_RANDOM        0
@@ -47,9 +52,6 @@ private slots:
     void on_playMode_clicked();
     void on_nextSong_clicked();
     void on_lastSong_clicked();
-public slots:
-    void getAlreadyPlay_S(int s);
-    void nextSong();
 
 private:
     //ui
@@ -73,8 +75,10 @@ private:
     //解码器,播放器,ui更新线程
     Decode decode;
     Play *play;
-    UpdateUIThread* updateUI;
+//    UpdateUIThread* updateUI;
     char* musicData;
+    //查询歌曲已经播放时间的定时器
+    QTimer queryAlreadyPlayTime_s;
     //歌曲
     unsigned int musicLength;
     QStringList musicName;

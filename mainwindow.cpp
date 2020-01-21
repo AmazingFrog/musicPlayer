@@ -5,18 +5,11 @@
 #endif //OS_LINUX
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "util.h"
-#include <iostream>
-#include <QTextCodec>
-#include <QFileInfo>
-#include <QTextStream>
-#include <QDir>
 
 MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindow){
     ui->setupUi(this);
 
     this->play = new Play();
-    this->updateUI = new UpdateUIThread(this->play);
     this->playMode = PLAY_MODE_RANDOM;
     this->musicLength = 0;
     //初始化控件
@@ -42,16 +35,16 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //读取歌曲信息
     this->initMusicDirInfo();
     this->musicLength = this->musicName.size();
-    //连接更新ui的信号
-    connect(this->updateUI,SIGNAL(sendAlreadPlay_S(int)),this,SLOT(getAlreadyPlay_S(int)));
-    connect(this->updateUI,SIGNAL(songFinish()),this,SLOT(nextSong()));
+    //定时器设置
+    queryAlreadyPlayTime_s.setInterval(1000);
+    queryAlreadyPlayTime_s.setSingleShot(false);
+    connect(&(this->queryAlreadyPlayTime_s),&QTimer::timeout,[=](){
+        ui->alreadyPlay_S->setText(QString::fromStdString(timeToString(play->getAlreadyPlay_S())));
+    });
 }
 MainWindow::~MainWindow(){
     delete ui;
     this->play->quit();
-    this->updateUI->quit();
-    this->updateUI->wait();
-    delete this->updateUI;
     delete this->play;
     delete this->listModel;
 }
@@ -92,14 +85,17 @@ void MainWindow::initMusicDirInfo(){
 void MainWindow::on_playSong_clicked(){
     switch(this->play->getState()){
     case PLAY_STATE_PAUSE:
+        this->queryAlreadyPlayTime_s.start();
         this->play->resume();
         this->playBtn->setIcon(this->pauseIcon);
         break;
     case PLAY_STATE_PLAYING:
+        this->queryAlreadyPlayTime_s.start();
         this->play->pause();
         this->playBtn->setIcon(this->playIcon);
         break;
     case PLAY_STATE_STOP:
+        this->queryAlreadyPlayTime_s.stop();
         this->playMusicName(0);
         break;
     default:
@@ -109,6 +105,7 @@ void MainWindow::on_playSong_clicked(){
 void MainWindow::on_progressBar_sliderReleased(){
     this->show_d->setText(QString::fromStdString(timeToString(this->progressBar->value())));
     this->play->jumpTo(this->progressBar->value());
+    this->queryAlreadyPlayTime_s.start();
 }
 void MainWindow::on_progressBar_valueChanged(int value){
     this->alreadyPlay->setText(QString("%1").arg(value));
@@ -116,18 +113,11 @@ void MainWindow::on_progressBar_valueChanged(int value){
 void MainWindow::on_list_doubleClicked(const QModelIndex &index){
     int r = index.row();
     this->playMusicName(r);
+    this->queryAlreadyPlayTime_s.start();
 }
 void MainWindow::on_playMode_clicked(){
     this->playMode = nextPlayMode(this->playMode);
     this->playModeBtn->setText(tr(PLAY_MODE_NAME[this->playMode]));
-}
-void MainWindow::getAlreadyPlay_S(int s){
-    this->progressBar->setValue(s);
-    this->alreadyPlay->setText(QString::fromStdString(timeToString(s)));
-}
-void MainWindow::nextSong(){
-    int now = this->getNextSongSubscript();
-    this->playMusicName(now);
 }
 int MainWindow::getNextSongSubscript(){
     int next = 0;
@@ -152,10 +142,6 @@ int MainWindow::getNextSongSubscript(){
 void MainWindow::playMusicName(int subscript){
     MusicInfo mInfo;
     PlayInfo pInfo;
-    if(this->updateUI->isRunning()){
-        this->updateUI->quit();
-        this->updateUI->wait();
-    }
     QString a = this->musicDir[this->nameMapDir[subscript]]+this->musicName[subscript];
     std::string name(a.toStdString());
     this->play->stop();
@@ -168,7 +154,6 @@ void MainWindow::playMusicName(int subscript){
     this->playing->setText(this->musicName[subscript]);
     this->playBtn->setIcon(this->pauseIcon);
     this->play->play();
-    this->updateUI->start();
 }
 void MainWindow::on_nextSong_clicked(){
     int next = this->getNextSongSubscript();
