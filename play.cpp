@@ -95,12 +95,11 @@ int Play::getState(){
 unsigned long Play::getMusicTime_S(){
     return this->musicTime_S;
 }
-int Play::getAlreadyPlay_S(){
+unsigned long Play::getAlreadyPlay_S(){
     int ret = 0;
     alGetSourcei(this->source,AL_SEC_OFFSET,&ret);
     return ret;
 }
-
 
 int getSampleByteLength(ALenum format){
     int sampleByteLength = 0;

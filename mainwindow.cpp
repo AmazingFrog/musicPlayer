@@ -39,7 +39,12 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     queryAlreadyPlayTime_s.setInterval(1000);
     queryAlreadyPlayTime_s.setSingleShot(false);
     connect(&(this->queryAlreadyPlayTime_s),&QTimer::timeout,[=](){
-        ui->alreadyPlay_S->setText(QString::fromStdString(timeToString(play->getAlreadyPlay_S())));
+        unsigned long alreadyPlayTime = this->play->getAlreadyPlay_S();
+        if(alreadyPlayTime >= this->play->getMusicTime_S()){
+            on_nextSong_clicked();
+            return;
+        }
+        ui->progressBar->setValue(alreadyPlayTime);
     });
 }
 MainWindow::~MainWindow(){
@@ -108,7 +113,7 @@ void MainWindow::on_progressBar_sliderReleased(){
     this->queryAlreadyPlayTime_s.start();
 }
 void MainWindow::on_progressBar_valueChanged(int value){
-    this->alreadyPlay->setText(QString("%1").arg(value));
+    ui->alreadyPlay_S->setText(QString("%1:%2").arg(value/60).arg(value%60));
 }
 void MainWindow::on_list_doubleClicked(const QModelIndex &index){
     int r = index.row();

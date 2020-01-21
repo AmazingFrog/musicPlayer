@@ -74,7 +74,7 @@ public:
     void setBuffer(void* data,const PlayInfo& playInfo);
 
     unsigned long getMusicTime_S();
-    int getAlreadyPlay_S();
+    unsigned long getAlreadyPlay_S();
     //发送信号
 signals:
     void songFinish();

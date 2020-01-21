@@ -75,7 +75,6 @@ private:
     //解码器,播放器,ui更新线程
     Decode decode;
     Play *play;
-//    UpdateUIThread* updateUI;
     char* musicData;
     //查询歌曲已经播放时间的定时器
     QTimer queryAlreadyPlayTime_s;
