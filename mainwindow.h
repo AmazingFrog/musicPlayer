@@ -71,7 +71,6 @@ private:
     //播放进度
     QLabel* alreadyPlay;
     QLabel* totalTime;
-    QLabel* show_d;
     //解码器,播放器,ui更新线程
     Decode decode;
     Play *play;

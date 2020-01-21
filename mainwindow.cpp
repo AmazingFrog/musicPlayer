@@ -28,7 +28,6 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),ui(new Ui::MainWindo
     //时间进度控件
     this->totalTime = ui->totalTIme_S;
     this->alreadyPlay = ui->alreadyPlay_S;
-    this->show_d = ui->show;
     //进度条控件
     this->progressBar->setMaximum(0);
     this->progressBar->setSingleStep(1);
@@ -108,7 +107,6 @@ void MainWindow::on_playSong_clicked(){
     }
 }
 void MainWindow::on_progressBar_sliderReleased(){
-    this->show_d->setText(QString::fromStdString(timeToString(this->progressBar->value())));
     this->play->jumpTo(this->progressBar->value());
     this->queryAlreadyPlayTime_s.start();
 }
